@@ -21,7 +21,9 @@ jobs:
           - name: ingestion-pipeline
             context: ingestion-pipeline
             chart: ingestion-pipeline/helm/Chart.yaml
-
+          - name: mcp-weather
+            context: mcp-weather
+            chart: mcp-weather/helm/Chart.yaml
     steps:
       - name: Checkout
         uses: actions/checkout@v4
