@@ -1,4 +1,5 @@
 {{- $models := include "llama-stack.mergeModels" . | fromJson }}
+{{- $mcpServers := include "llama-stack.mergeMcpServers" . | fromJson }}
 {{- $shields := list }}
 {{- range $key, $model := $models }}
   {{- if and $model.enabled $model.registerShield }}
@@ -161,7 +162,7 @@ data:
       provider_id: tavily-search
     - toolgroup_id: builtin::rag
       provider_id: rag-runtime
-    {{- range $key, $server := index .Values "mcp-servers" }}
+    {{- range $key, $server := $mcpServers }}
     - toolgroup_id: mcp::{{ $key }}
       provider_id: model-context-protocol
       mcp_endpoint:

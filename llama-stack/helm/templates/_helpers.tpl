@@ -78,3 +78,11 @@ Create the name of the service account to use
   {{- end }}
   {{- toJson $merged }}
 {{- end }}
+
+{{- define "llama-stack.mergeMcpServers" -}}
+  {{- $globalServers := .Values.global | default dict }}
+  {{- $globalServers := index $globalServers "mcp-servers" | default dict }}
+  {{- $localServers := index .Values "mcp-servers" | default dict }}
+  {{- $merged := merge $globalServers $localServers }}
+  {{- toJson $merged }}
+{{- end }}

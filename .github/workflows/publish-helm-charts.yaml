@@ -19,8 +19,13 @@ jobs:
       matrix:
         include:
           - name: ingestion-pipeline
-            context: ingestion-pipeline
+            file: ingestion-pipeline/Containerfile
             chart: ingestion-pipeline/helm/Chart.yaml
+            context: ingestion-pipeline/src
+          - name: mcp-weather
+            file: mcp-servers/weather/Containerfile
+            context: mcp-servers/weather/src
+            chart: mcp-servers/helm/Chart.yaml
 
     steps:
       - name: Checkout
@@ -45,8 +50,8 @@ jobs:
       - name: Build and push ${{ matrix.name }}
         uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.context }}/src
-          file: ${{ matrix.context }}/Containerfile
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}
           push: true
           tags: quay.io/ecosystem-appeng/${{ matrix.name }}:${{ steps.version.outputs.tag }}
           build-args: |

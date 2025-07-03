@@ -1,0 +1,5 @@
+mcp-servers:
+  mcp-weather:
+    deploy: true
+    imageRepository: quay.io/ecosystem-appeng/mcp-weather
+    uri: http://mcp-weather:8000/sse
