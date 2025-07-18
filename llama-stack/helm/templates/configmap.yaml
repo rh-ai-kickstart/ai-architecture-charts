@@ -161,3 +161,16 @@ data:
       mcp_endpoint:
         uri: {{ $server.uri }}
     {{- end }}
+    {{- if .Values.auth }}
+    server:
+      auth:
+        {{- if .Values.auth.custom }}
+        provider_type: "custom"
+        config:
+          endpoint: {{ .Values.auth.custom.endpoint }}
+        {{- end }}
+        {{- with .Values.auth.access_policy }}
+        access_policy:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}        
+    {{- end }}

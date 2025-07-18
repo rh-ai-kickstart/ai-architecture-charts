@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from kfp import dsl
 
@@ -88,8 +89,9 @@ def fetch_from_github(output_dir: dsl.OutputPath()):
 
 
 @dsl.component(base_image=BASE_IMAGE)
-def store_documents(llamastack_base_url: str, input_dir: dsl.InputPath()):
+def store_documents(llamastack_base_url: str, input_dir: dsl.InputPath(), auth_user: str):
     import os
+    import asyncio
     from pathlib import Path
 
     from docling.datamodel.base_models import InputFormat
@@ -99,7 +101,7 @@ def store_documents(llamastack_base_url: str, input_dir: dsl.InputPath()):
     from docling.document_converter import DocumentConverter, PdfFormatOption
     from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
     from docling_core.types.doc.labels import DocItemLabel
-    from llama_stack_client import LlamaStackClient
+    from llama_stack_client import AsyncLlamaStackClient
     from llama_stack_client.types import Document as LlamaStackDocument
 
     os.environ["EASYOCR_MODULE_PATH"] = "/tmp/.EasyOCR"
@@ -176,15 +178,31 @@ def store_documents(llamastack_base_url: str, input_dir: dsl.InputPath()):
         raise Exception("No valid chunks were created. Check document processing errors above.")
 
     # Step 3: Register vector database and store chunks with embeddings
-    client = LlamaStackClient(base_url=llamastack_base_url)
+    headers = {}
+    if auth_user:
+        headers={"X-Forwarded-User": auth_user}
+        file_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+        try:
+            with open(file_path, "r") as file:
+                token = file.read()
+                headers["Authorization"]=f"Bearer {token}"
+        except FileNotFoundError:
+            print(f"Error: The file '{file_path}' was not found.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+    client = AsyncLlamaStackClient(
+        base_url=llamastack_base_url,
+        default_headers=headers,
+    )
     print("Registering db")
     try:
-        client.vector_dbs.register(
+        asyncio.run(client.vector_dbs.register(
             vector_db_id=vector_db_name,
             embedding_model=embedding_model,
             embedding_dimension=384,
             provider_id="pgvector",
-        )
+        ))
         print("Vector DB registered successfully")
     except Exception as e:
         error_message = str(e)
@@ -193,11 +211,11 @@ def store_documents(llamastack_base_url: str, input_dir: dsl.InputPath()):
 
     try:
         print(f"Inserting {total_chunks} chunks into vector database")
-        client.tool_runtime.rag_tool.insert(
+        asyncio.run(client.tool_runtime.rag_tool.insert(
             documents=llama_documents,
             vector_db_id=vector_db_name,
             chunk_size_in_tokens=512,
-        )
+        ))
         print("Documents successfully inserted into the vector DB")
 
     except Exception as e:

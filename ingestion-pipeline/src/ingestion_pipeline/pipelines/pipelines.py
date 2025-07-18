@@ -1,9 +1,10 @@
 from kfp import dsl
+from typing import Optional
 
 from . import tasks
 
 
-def s3_pipeline(pipeline_name: str, llamastack_base_url: str):
+def s3_pipeline(pipeline_name: str, llamastack_base_url: str, auth_user: str):
     @dsl.pipeline(name="fetch-and-store-pipeline")
     def _pipeline():
         from kfp import kubernetes
@@ -24,7 +25,8 @@ def s3_pipeline(pipeline_name: str, llamastack_base_url: str):
 
         store_task = tasks.store_documents(
             llamastack_base_url=llamastack_base_url,
-            input_dir=fetch_task.outputs["output_dir"]
+            input_dir=fetch_task.outputs["output_dir"],
+            auth_user=auth_user
         )
         store_task.set_caching_options(False)
 
@@ -37,7 +39,7 @@ def s3_pipeline(pipeline_name: str, llamastack_base_url: str):
     return _pipeline
 
 
-def url_pipeline(pipeline_name: str, llamastack_base_url: str):
+def url_pipeline(pipeline_name: str, llamastack_base_url: str, auth_user: str):
     @dsl.pipeline(name="fetch-and-store-pipeline")
     def _pipeline():
         from kfp import kubernetes
@@ -54,7 +56,8 @@ def url_pipeline(pipeline_name: str, llamastack_base_url: str):
 
         store_task = tasks.store_documents(
             llamastack_base_url=llamastack_base_url,
-            input_dir=fetch_task.outputs["output_dir"]
+            input_dir=fetch_task.outputs["output_dir"],
+            auth_user=auth_user
         )
         store_task.set_caching_options(False)
 
@@ -66,7 +69,7 @@ def url_pipeline(pipeline_name: str, llamastack_base_url: str):
     return _pipeline
 
 
-def github_pipeline(pipeline_name: str, llamastack_base_url: str):
+def github_pipeline(pipeline_name: str, llamastack_base_url: str, auth_user: str):
     @dsl.pipeline(name="fetch-and-store-pipeline")
     def _pipeline():
         from kfp import kubernetes
@@ -86,7 +89,8 @@ def github_pipeline(pipeline_name: str, llamastack_base_url: str):
 
         store_task = tasks.store_documents(
             llamastack_base_url=llamastack_base_url,
-            input_dir=fetch_task.outputs["output_dir"]
+            input_dir=fetch_task.outputs["output_dir"],
+            auth_user=auth_user
         )
         store_task.set_caching_options(False)
 

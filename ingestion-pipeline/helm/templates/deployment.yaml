@@ -36,6 +36,11 @@ spec:
       initContainers:
         - name: wait-for-services
           image: "image-registry.openshift-image-registry.svc:5000/openshift/tools:latest"
+          {{- if .Values.authUser }}
+          env:
+            - name: LLAMA_STACK_AUTH_USER
+              value: {{ .Values.authUser }}
+          {{- end }}
           command:
             - /bin/bash
             - -c
@@ -50,8 +55,13 @@ spec:
               echo "Data science pipeline configured"
 
               url="http://llamastack:8321/v1/models"
+              if [ ! -z ${LLAMA_STACK_AUTH_USER} ]; then
+                headers="-H \"X-Forwarded-User: ${LLAMA_STACK_AUTH_USER}\" -H \"Authorization: Bearer \$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\""
+              fi
               echo "Waiting for $url..."
-              until curl -ksf "$url"; do
+              command="curl -ksf "$url" $headers"
+              echo $command
+              until $(command); do
                 echo "Still waiting for $url ..."
                 sleep 10
               done
@@ -73,6 +83,10 @@ spec:
               value: "http://llamastack.{{ .Release.Namespace }}.svc.cluster.local:8321"
             - name: DS_PIPELINE_URL
               value: "https://ds-pipeline-dspa.{{ .Release.Namespace }}.svc.cluster.local:8888"
+          {{- if .Values.authUser }}
+            - name: LLAMA_STACK_AUTH_USER
+              value: {{ .Values.authUser }}
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
